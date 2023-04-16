@@ -43,5 +43,5 @@ class MLP(nn.Module):
         x = self.additional_layer(x)
         x= torch.cat((x,d),dim=-1)
         rgb = self.rgb_layer(x)
-        return torch.cat((alpha,rgb),-1)
+        return torch.cat((rgb,alpha),-1)
 
