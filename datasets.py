@@ -5,19 +5,46 @@ import numpy as np
 import torch.utils.data
 import torchvision.transforms as transforms
 
+from rayUtils import get_rays
+
+
 class NerfDataset(torch.utils.data.Dataset):
     def __init__(self,data):
         super(NerfDataset,self).__init__()
         self.imgs = data['imgs']
-        self.poses = data['poses']
+        self.c2ws = data['c2ws']
         self.camera_angle_x = data['camera_angle_x']
-        self.focal = .5 * self.imgs.shape[2] / np.tan(.5 * self.camera_angle_x)
+        self.read_meta()
 
+
+    def read_meta(self):
+        self.H = self.imgs.shape[1]
+        self.W = self.imgs.shape[2]
+        self.focal = .5 * self.W / np.tan(.5 * self.camera_angle_x)
+        self.K = np.array([
+            [self.focal, 0, 0.5 * self.W],
+            [0, self.focal, 0.5 * self.H],
+            [0, 0, 1]
+        ])
+        self.near = 2
+        self.far  = 6
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self,idx):
-        return self.data[idx],self.poses[idx]
+        img = self.imgs[idx]  # (H, W, 4)
+        c2w = self.c2ws[idx]
+        rays_o, rays_d = get_rays(self.H, self.W, self.K, c2w)
+        rays = torch.cat([rays_o, rays_d, self.near * torch.ones_like(rays_o[:, :, :1]),
+                            self.far * torch.ones_like(rays_o[:, :, :1])], -1) # (H, W, 8)
+        #Color = Color * alpha + Background * (1 - alpha);
+        rgb = img[..., :3] * img[..., -1:] + (1. - img[..., -1:])
+        sample = {
+            "rgb": rgb,
+            "rays": rays,
+            "c2w": c2w,
+        }
+        return sample
 # lego: blender
 def load_data_set(root,dataset_name,image_size=None):
     test_skip=0
@@ -31,7 +58,7 @@ def load_data_set(root,dataset_name,image_size=None):
     for split in splits:
         transform = transforms[split]
         imgs =[]
-        poses=[]
+        c2ws=[]
         if split =="train" or test_skip==0:
             skip =1
         else:
@@ -40,17 +67,17 @@ def load_data_set(root,dataset_name,image_size=None):
         for frame in transform["frames"][::skip]:
             file_path = os.path.join(basedir,frame["file_path"]+".png")
             imgs.append(imageio.v2.imread(file_path))
-            poses.append(np.array(frame["transform_matrix"]))
+            c2ws.append(np.array(frame["transform_matrix"]))
         imgs = (np.array(imgs)/225.).astype(np.float32)
-        poses = np.array(poses).astype(np.float32)
+        c2ws = np.array(c2ws).astype(np.float32)
         data[split] = {"imgs":imgs,
-                       "poses":poses,
+                       "c2ws":c2ws,
                        "camera_angle_x":transform["camera_angle_x"]}
 
-        return NerfDataset(data["train"]),NerfDataset(data["val"]), NerfDataset(data["test"])
+    return NerfDataset(data["train"]),NerfDataset(data["val"]), NerfDataset(data["test"])
 
 
 root ="data/nerf_synthetic"
 dataset_name = "lego"
-load_data_set(root,dataset_name)
+load_data_set(root,dataset_name)[0][0]
 
