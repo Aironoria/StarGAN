@@ -15,15 +15,13 @@ def render(mlp_raw):
     sigma =mlp_raw[:,:,3]
     delta = torch.ones_like(mlp_raw[:,:,3])  # [numbers of rays, distance_delta]
     Ti = torch.cat([ T_i(i,sigma,delta) for i in range(N) ],-1)
+    #ouput = (number of rays, rgb)
     output = torch.cat((
         torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:, :, 0], -1,keepdim=True),
         torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:, :, 1], -1,keepdim=True),
         torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:, :, 2], -1,keepdim=True),
     ),1)
-    c_r = mlp_raw[:,:,0].numpy()
-    Ti =Ti.numpy()
-    output = output.numpy()
-    sigma = sigma.numpy()
+
 
     breakpoint()
 
