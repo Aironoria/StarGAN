@@ -35,11 +35,11 @@ class NerfDataset(torch.utils.data.Dataset):
         img = self.imgs[idx]  # (H, W, 4)
         c2w = self.c2ws[idx]
         rays_o, rays_d = get_rays(self.H, self.W, self.K, c2w)
-        h=300
-        w=400
-        img = img[h:w,h:w, :]
-        rays_o = rays_o[h:w,h:w, :]
-        rays_d = rays_d[h:w,h:w, :]
+        # h=300
+        # w=400
+        # img = img[h:w,h:w, :]
+        # rays_o = rays_o[h:w,h:w, :]
+        # rays_d = rays_d[h:w,h:w, :]
         # rays = torch.cat([rays_o, rays_d, self.near * torch.ones_like(rays_o[:, :, :1]),
         #                     self.far * torch.ones_like(rays_o[:, :, :1])], -1) # (H, W, 8)
         #Color = Color * alpha + Background * (1 - alpha);

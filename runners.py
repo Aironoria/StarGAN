@@ -19,7 +19,7 @@ def train_epoch(model,optimizer,criterion,dataloader,device="cpu"):
 
 
 
-train_dataset, val_dataset, test_dataset = datasets.load_data_set("data/nerf_synthetic", "lego")
+train_dataset, val_dataset, test_dataset = datasets.load_data_set("data/nerf_synthetic", "tiny_lego")
 train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
 
 
