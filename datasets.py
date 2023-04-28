@@ -29,19 +29,29 @@ class NerfDataset(torch.utils.data.Dataset):
         self.near = 2
         self.far  = 6
     def __len__(self):
-        return len(self.data)
+        return len(self.imgs)
 
     def __getitem__(self,idx):
         img = self.imgs[idx]  # (H, W, 4)
         c2w = self.c2ws[idx]
         rays_o, rays_d = get_rays(self.H, self.W, self.K, c2w)
-        rays = torch.cat([rays_o, rays_d, self.near * torch.ones_like(rays_o[:, :, :1]),
-                            self.far * torch.ones_like(rays_o[:, :, :1])], -1) # (H, W, 8)
+        h=300
+        w=400
+        img = img[h:w,h:w, :]
+        rays_o = rays_o[h:w,h:w, :]
+        rays_d = rays_d[h:w,h:w, :]
+        # rays = torch.cat([rays_o, rays_d, self.near * torch.ones_like(rays_o[:, :, :1]),
+        #                     self.far * torch.ones_like(rays_o[:, :, :1])], -1) # (H, W, 8)
         #Color = Color * alpha + Background * (1 - alpha);
         rgb = img[..., :3] * img[..., -1:] + (1. - img[..., -1:])
+        rgb = rgb.reshape(-1, 3)
+        rays_o = rays_o.reshape(-1, 3)
+        rays_d = rays_d.reshape(-1, 3)
+        partion_size = 400*400
         sample = {
             "rgb": rgb,
-            "rays": rays,
+            "rays_o": rays_o,
+            "rays_d": rays_d,
             "c2w": c2w,
         }
         return sample

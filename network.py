@@ -37,8 +37,7 @@ class MLP(nn.Module):
         d = self.positional_encoder(d,4)
         x_initial =x
         for index,layer in enumerate(self.layers):
-            print(index)
-            x = F.relu(layer(x))
+            x = F.relu(layer(x), inplace=True)
             if index in self.skip:
                 x= torch.cat((x,x_initial),dim=-1)
 
