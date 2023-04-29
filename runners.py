@@ -1,33 +1,47 @@
 import datasets
 from network import MLP
-from network import PositionalEncoding
+import matplotlib.pyplot as plt
 import render
 import  torch
+import time
 def train_epoch(model,optimizer,criterion,dataloader,device="cpu"):
-
+    start = time.time()
+    model.to(device)
+    total_loss = 0
     for item in dataloader:
         true_color = item["rgb"]
         rays_o, rays_d = item["rays_o"], item["rays_d"]
-        predicted_color = render.render_rays(model,rays_o,rays_d,bins=192)
+        rays_o = rays_o.to(device)
+        rays_d = rays_d.to(device)
+        true_color = true_color.to(device)
+        predicted_color = render.render_rays(model,rays_o,rays_d)
         loss = criterion(predicted_color,true_color)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print(loss.item())
+        total_loss += loss.item()
+        # print(loss.item())
+    # print( time.time() - start )
+    total_loss = total_loss / len(dataloader)
+    psnr = -10. * torch.log(loss).item() / torch.log(torch.tensor([10.]))
+    print("loss: ",total_loss,"psnr: ",psnr.item())
 
 
 
+def valid_epoch(model,optimizer,criterion,dataloader,device="cpu"):
+    start = time.time()
+    model.to(device)
 
-train_dataset, val_dataset, test_dataset = datasets.load_data_set("data/nerf_synthetic", "tiny_lego")
-train_data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
-
-
-model = MLP()
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-criterion = torch.nn.MSELoss()
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-device = torch.device("cpu")
-train_epoch(model,optimizer,criterion,train_data_loader,device)
+    for item in dataloader:
+        true_color = item["rgb"]
+        rays_o, rays_d = item["rays_o"], item["rays_d"]
+        rays_o = rays_o.to(device)
+        rays_d = rays_d.to(device)
+        true_color = true_color.to(device)
+        predicted_color = render.render_rays(model,rays_o,rays_d).cpu().detach().numpy()
+        predicted_color= predicted_color.reshape(100, 100, 3)
+        plt.imshow(predicted_color)
+        plt.show()
+    # print( time.time() - start )
 

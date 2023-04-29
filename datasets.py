@@ -33,6 +33,7 @@ class NerfDataset(torch.utils.data.Dataset):
 
     def __getitem__(self,idx):
         img = self.imgs[idx]  # (H, W, 4)
+        # img = np.array(Image.open(self.img_paths[idx])).astype(np.float32) / 255.
         c2w = self.c2ws[idx]
         rays_o, rays_d = get_rays(self.H, self.W, self.K, c2w)
         # h=300
@@ -42,8 +43,10 @@ class NerfDataset(torch.utils.data.Dataset):
         # rays_d = rays_d[h:w,h:w, :]
         # rays = torch.cat([rays_o, rays_d, self.near * torch.ones_like(rays_o[:, :, :1]),
         #                     self.far * torch.ones_like(rays_o[:, :, :1])], -1) # (H, W, 8)
+
         #Color = Color * alpha + Background * (1 - alpha);
-        rgb = img[..., :3] * img[..., -1:] + (1. - img[..., -1:])
+        # rgb = img[..., :3] * img[..., -1:] + 0* (1. - img[..., -1:])
+        rgb = img[..., :3]
         rgb = rgb.reshape(-1, 3)
         rays_o = rays_o.reshape(-1, 3)
         rays_d = rays_d.reshape(-1, 3)
@@ -78,7 +81,8 @@ def load_data_set(root,dataset_name,image_size=None):
             file_path = os.path.join(basedir,frame["file_path"]+".png")
             imgs.append(imageio.v2.imread(file_path))
             c2ws.append(np.array(frame["transform_matrix"]))
-        imgs = (np.array(imgs)/225.).astype(np.float32)
+        # a = (np.array(imgs)/225.).astype(np.float32)
+        imgs = np.array(imgs).astype(np.float32)/255.
         c2ws = np.array(c2ws).astype(np.float32)
         data[split] = {"imgs":imgs,
                        "c2ws":c2ws,
@@ -87,7 +91,8 @@ def load_data_set(root,dataset_name,image_size=None):
     return NerfDataset(data["train"]),NerfDataset(data["val"]), NerfDataset(data["test"])
 
 
-root ="data/nerf_synthetic"
-dataset_name = "lego"
-load_data_set(root,dataset_name)[0][0]
+if __name__ == '__main__':
+    root = "data/nerf_synthetic"
+    dataset_name = "lego"
+    load_data_set(root, dataset_name)[0][0]
 

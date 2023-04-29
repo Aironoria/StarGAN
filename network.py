@@ -13,8 +13,10 @@ class PositionalEncoding(nn.Module):
     def forward(self,x,L):
         out =[]
         for i in range(L):
-            sin_x = torch.sin(2**i*torch.pi*x)
-            cos_x = torch.sin(2**i*torch.pi*x)
+            # sin_x = torch.sin(2**i*torch.pi*x)
+            # cos_x = torch.sin(2**i*torch.pi*x)
+            sin_x = torch.sin(2**i*x)
+            cos_x = torch.sin(2**i*x)
             out.extend([sin_x,cos_x])
         return torch.cat(out,-1)
 
