@@ -49,19 +49,15 @@ def mlp_raw_to_color(mlp_raw,delta,device):
     # delta = torch.ones_like(mlp_raw[:,:,3])  # [numbers of rays, distance_delta]
     # a= T_i(0,sigma,delta)
     # Ti = torch.cat([ T_i(i,sigma,delta) for i in range(N) ],-1)
-    #
-    # #ouput = (number of rays, rgb)
     # output = torch.cat((
     #     torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:,:, :, 0], -1,keepdim=True),
     #     torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:,:, :, 1], -1,keepdim=True),
     #     torch.sum(Ti * (1 - torch.exp(- sigma * delta)) * mlp_raw[:, :,:, 2], -1,keepdim=True),
-    # ),-1)
-
+    # ),-1)  #ouput = (number of rays, rgb)
+    #
     alpha = 1 - torch.exp(- sigma * delta) #[batch_size, ray_num, samples per ray]
     alpha_shifted = torch.cat((torch.ones_like(alpha[:,:,:1]),1-alpha +1e-10), -1) #[1,a1,a2,a3,...]
-    # b = torch.cumprod(alpha_shifted, -1)[:, :-1]
     weights = alpha * torch.cumprod(alpha_shifted, -1)[:,:, :-1] #[batch_size, ray_num, samples per ray]
-    # [:,:,:-1] #[batch_size, ray_num, samples per ray]
     output=torch.sum(weights.unsqueeze(-1)*mlp_raw[:,:,:,:3],-2)
     return output
 

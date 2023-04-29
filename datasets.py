@@ -9,12 +9,13 @@ from rayUtils import get_rays
 
 
 class NerfDataset(torch.utils.data.Dataset):
-    def __init__(self,data):
+    def __init__(self,data,ray_num=None):
         super(NerfDataset,self).__init__()
         self.imgs = data['imgs']
         self.c2ws = data['c2ws']
         self.camera_angle_x = data['camera_angle_x']
         self.read_meta()
+        self.ray_num=ray_num
 
 
     def read_meta(self):
@@ -31,6 +32,15 @@ class NerfDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.imgs)
 
+    def get_test_image(self):
+        ray_num =self.ray_num
+        self.ray_num=None
+        res = self.__getitem__(0)
+        res['rgb'] = res['rgb'].reshape(self.H,self.W,3)[None,...]
+        res['rays_o'] = res['rays_o'].reshape(self.H,self.W,3)[None,...]
+        res['rays_d'] = res['rays_d'].reshape(self.H,self.W,3)[None,...]
+        self.ray_num=ray_num
+        return res
     def __getitem__(self,idx):
         img = self.imgs[idx]  # (H, W, 4)
         # img = np.array(Image.open(self.img_paths[idx])).astype(np.float32) / 255.
@@ -50,7 +60,11 @@ class NerfDataset(torch.utils.data.Dataset):
         rgb = rgb.reshape(-1, 3)
         rays_o = rays_o.reshape(-1, 3)
         rays_d = rays_d.reshape(-1, 3)
-        partion_size = 400*400
+        if self.ray_num is not None:
+            idx = np.random.choice(len(rays_o), self.ray_num, replace=False)
+            rays_o = rays_o[idx]
+            rays_d = rays_d[idx]
+            rgb = rgb[idx]
         sample = {
             "rgb": rgb,
             "rays_o": rays_o,
@@ -59,7 +73,7 @@ class NerfDataset(torch.utils.data.Dataset):
         }
         return sample
 # lego: blender
-def load_data_set(root,dataset_name,image_size=None):
+def load_data_set(root,dataset_name,image_size=None,ray_num=None):
     test_skip=0
     splits = ["train","val","test"]
     basedir = os.path.join(root,dataset_name)
@@ -88,7 +102,7 @@ def load_data_set(root,dataset_name,image_size=None):
                        "c2ws":c2ws,
                        "camera_angle_x":transform["camera_angle_x"]}
 
-    return NerfDataset(data["train"]),NerfDataset(data["val"]), NerfDataset(data["test"])
+    return NerfDataset(data["train"],ray_num),NerfDataset(data["val"],ray_num), NerfDataset(data["test"],ray_num)
 
 
 if __name__ == '__main__':
