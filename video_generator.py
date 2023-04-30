@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from tqdm import tqdm as tdqm
+from tqdm import tqdm
 import rayUtils
 import render
 from network import MLP
@@ -43,14 +43,14 @@ K =  np.array([
             [0, 0, 1]
         ])
 model = MLP()
-model.load_state_dict(torch.load("model.pth"))
+model.load_state_dict(torch.load("res/04_29_lego/model_04_29_lego.pth"))
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
-for th in tdqm(np.linspace(0,360,120)):
+for th in tqdm(np.linspace(0,360,120)):
     with torch.no_grad():
         c2w = get_c2w(th, -30, 4)
         rays_o, rays_d = rayUtils.get_rays(H, W, K, c2w)
         rays_o, rays_d = rays_o.to(device), rays_d.to(device)
         predicted_color = render.render_rays(model, rays_o, rays_d).reshape(H, W, 3).cpu().numpy()
         frames.append((255 * predicted_color).astype(np.uint8))
-imageio.mimsave('video.gif', frames, duration=1000/30)
+imageio.mimsave('res/04_29_lego/video1.gif', frames, duration=1000 / 30)

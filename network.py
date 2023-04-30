@@ -33,6 +33,9 @@ class MLP(nn.Module):
         self.rgb_layer = nn.Sequential( nn.Linear(W+24,W//2),nn.ReLU(inplace=True),
                                           nn.Linear(W//2,3), nn.Sigmoid())
         self.positional_encoder = PositionalEncoding()
+        for i in self.modules():
+            if isinstance(i,(nn.Linear,nn.Conv2d)):
+                nn.init.kaiming_normal_(i.weight)
 
     def forward(self,x,d):
         x = self.positional_encoder(x,10)

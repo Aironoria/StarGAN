@@ -3,7 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import json
-data = np.load('tiny_nerf_data.npz')
+data = np.load('data/tiny_nerf_data.npz')
 images = data['images']
 poses = data['poses']
 focal = data['focal']

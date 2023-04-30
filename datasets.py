@@ -56,7 +56,7 @@ class NerfDataset(torch.utils.data.Dataset):
 
         #Color = Color * alpha + Background * (1 - alpha);
         # rgb = img[..., :3] * img[..., -1:] + 0* (1. - img[..., -1:])
-        rgb = img[..., :3]
+        rgb = torch.tensor(img[..., :3])
         rgb = rgb.reshape(-1, 3)
         rays_o = rays_o.reshape(-1, 3)
         rays_d = rays_d.reshape(-1, 3)
